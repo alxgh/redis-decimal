@@ -1,5 +1,6 @@
 include_directories(${PROJECT_SOURCE_DIR}/deps/redismodule)
 include_directories(${PROJECT_SOURCE_DIR}/deps/rmutil)
+include_directories(${PROJECT_SOURCE_DIR})
 
 set(headers
     ../deps/redismodule/redismodule.h

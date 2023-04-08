@@ -7,6 +7,13 @@
   RedisModule_ReplyWithString(ctx, rst); \
   return REDISMODULE_OK;
 
+#define ASSERT_NOERROR(ctx, r)                                   \
+      if (r == NULL) {                                                      \
+          return RedisModule_ReplyWithError(ctx, "ERR reply is NULL");        \
+        } else if (RedisModule_CallReplyType(r) == REDISMODULE_REPLY_ERROR) { \
+            RedisModule_ReplyWithCallReply(ctx, r);                             \
+            return REDISMODULE_ERR;                                             \
+          }
 
 bool ignoreCaseEquals(const std::string str, const std::string expect) {
   return std::equal(str.begin(), str.end(), expect.begin(), [](char c1, char c2) {
@@ -23,45 +30,55 @@ int validate_precision(int prec) {
 }
 
 int BigDecimal_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
-  if (argc < 4 || argc > 5) {
+  if (argc != 4) {
     return RedisModule_WrongArity(ctx);
   }
   RedisModule_AutoMemory(ctx);
-
-  RedisModuleString *x = argv[2], *y = argv[3];
-  RedisDecimalUtils rdUtils(ctx);
-
-  // Set precision
-  long long int prec;
-  if (argc == 5) {
-    if (RedisModule_StringToLongLong(argv[4], &prec) || validate_precision(prec)) {
-      return RedisModule_WrongArity(ctx);
-    }
-  } else {
-    prec = MAX_PREC;
+  RedisModuleKey *key = (RedisModuleKey *)
+            RedisModule_OpenKey(ctx, argv[1], REDISMODULE_READ | REDISMODULE_WRITE);
+  if (key != NULL) {
+    if (RedisModule_KeyType(key) != REDISMODULE_KEYTYPE_STRING &&
+                  RedisModule_KeyType(key) != REDISMODULE_KEYTYPE_EMPTY) {
+        return RedisModule_ReplyWithError(ctx, REDISMODULE_ERRORMSG_WRONGTYPE);
+      }
+  }
+  RedisModuleCallReply *rep =
+    RedisModule_Call(ctx, "GET", "s", argv[1]);
+  RedisModuleString *val;
+  ASSERT_NOERROR(ctx, rep)
+    val = RedisModule_CreateStringFromCallReply(rep);
+  if (val == NULL) {
+      val = RedisModule_CreateString(ctx, "0", 1);
   }
 
+  RedisModuleString *x = argv[3];
+  RedisDecimalUtils rdUtils(ctx);
+  RedisModuleString *result = NULL;
+  // Set precision
   // Addition
-  if (redisIgnoreCaseEquals(argv[1], "ADD")) {
-    RC_RETURN(rdUtils.add(x, y, prec))
+  if (redisIgnoreCaseEquals(argv[2], "ADD")) {
+    result = rdUtils.add(val, x);
   }
   // Subtraction
-  if (redisIgnoreCaseEquals(argv[1], "SUB")) {
-    RC_RETURN(rdUtils.sub(x, y, prec))
+  if (redisIgnoreCaseEquals(argv[2], "SUB")) {
+    result = rdUtils.sub(val, x);
   }
   // Multiplication
-  if (redisIgnoreCaseEquals(argv[1], "MUL")) {
-    RC_RETURN(rdUtils.mul(x, y, prec))
+  if (redisIgnoreCaseEquals(argv[2], "MUL")) {
+    result = rdUtils.mul(val, x);
   }
   // Division
-  if (redisIgnoreCaseEquals(argv[1], "DIV")) {
-    // TODO: optimize here
-    // Check by zero
-    RedisDecimal<MAX_PREC> check_by_zero(y);
-    if (check_by_zero.getUnbiased() == 0) {
-      return RedisModule_WrongArity(ctx);
+  if (redisIgnoreCaseEquals(argv[2], "DIV")) {
+    result = rdUtils.div(val, x);
+  }
+  if (result != NULL) {
+    RedisModuleCallReply *srep =
+      RedisModule_Call(ctx, "SET", "ss", argv[1], result);
+    ASSERT_NOERROR(ctx, srep)
+    if (srep != NULL) {
+      RedisModule_ReplyWithCallReply(ctx, srep);
     }
-    RC_RETURN(rdUtils.div(x, y, prec))
+    return REDISMODULE_OK;
   }
 
   return RedisModule_WrongArity(ctx);

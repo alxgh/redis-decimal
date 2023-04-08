@@ -1,73 +1,56 @@
 #include "./decimal_utils.h"
 
-#define DECIMAL(PREC) dec::decimal<PREC, dec::round_down_round_policy>
-#define DECIMAL_D DECIMAL(MAX_PREC)
+using boost::multiprecision::cpp_dec_float_50;
+#define DECIMAL_D cpp_dec_float_50
 
-#define RESULT(n, prec) \
-  switch (prec) {  \
-    case 0: \
-      return toString(DECIMAL(0)(n.getUnbiased(), n.getPrecFactor())); \
-    case 1: \
-      return toString(DECIMAL(1)(n.getUnbiased(), n.getPrecFactor())); \
-    case 2: \
-      return toString(DECIMAL(2)(n.getUnbiased(), n.getPrecFactor())); \
-    case 3: \
-      return toString(DECIMAL(3)(n.getUnbiased(), n.getPrecFactor())); \
-    case 4: \
-      return toString(DECIMAL(4)(n.getUnbiased(), n.getPrecFactor())); \
-    case 5: \
-      return toString(DECIMAL(5)(n.getUnbiased(), n.getPrecFactor())); \
-    case 6: \
-      return toString(DECIMAL(6)(n.getUnbiased(), n.getPrecFactor())); \
-  } \
-  throw std::logic_error("Precision other than 0-6 is not supported.");
+#define RESULT(n) return n.str();
 
 
-string DecimalUtils::add(const string &a, const string &b, int precision) {
+string DecimalUtils::add(const string &a, const string &b) {
   DECIMAL_D x(a), y(b);
   x += y;
-  RESULT(x, precision)
+  RESULT(x)
 }
 
-string DecimalUtils::sub(const string &a, const string &b, int precision) {
+string DecimalUtils::sub(const string &a, const string &b) {
   DECIMAL_D x(a), y(b);
   x -= y;
-  RESULT(x, precision)
+  RESULT(x)
 }
 
-string DecimalUtils::mul(const string &a, const string &b, int precision) {
+string DecimalUtils::mul(const string &a, const string &b) {
   DECIMAL_D x(a), y(b);
   x *= y;
-  RESULT(x, precision)
+  RESULT(x)
 }
 
-string DecimalUtils::div(const string &a, const string &b, int precision) {
+string DecimalUtils::div(const string &a, const string &b) {
   DECIMAL_D x(a), y(b);
   x /= y;
-  RESULT(x, precision)
+  RESULT(x)
 }
 
 
 RedisModuleString *
-RedisDecimalUtils::add(const RedisModuleString *a, const RedisModuleString *b, int precision) {
-  string rst = DecimalUtils::add(RedisModule_StringPtrLen(a, NULL), RedisModule_StringPtrLen(b, NULL), precision);
+RedisDecimalUtils::add(const RedisModuleString *a, const RedisModuleString *b) {
+  string rst = DecimalUtils::add(RedisModule_StringPtrLen(a, NULL), RedisModule_StringPtrLen(b, NULL));
   return RedisModule_CreateString(this->_ctx, rst.data(), rst.length());
 }
 
 RedisModuleString *
-RedisDecimalUtils::sub(const RedisModuleString *a, const RedisModuleString *b, int precision) {
-  string rst = DecimalUtils::sub(RedisModule_StringPtrLen(a, NULL), RedisModule_StringPtrLen(b, NULL), precision);
+RedisDecimalUtils::sub(const RedisModuleString *a, const RedisModuleString *b) {
+  string rst = DecimalUtils::sub(RedisModule_StringPtrLen(a, NULL), RedisModule_StringPtrLen(b, NULL));
   return RedisModule_CreateString(this->_ctx, rst.data(), rst.length());
 }
 
 RedisModuleString *
-RedisDecimalUtils::mul(const RedisModuleString *a, const RedisModuleString *b, int precision) {
-  string rst = DecimalUtils::mul(RedisModule_StringPtrLen(a, NULL), RedisModule_StringPtrLen(b, NULL), precision);
+RedisDecimalUtils::mul(const RedisModuleString *a, const RedisModuleString *b) {
+  string rst = DecimalUtils::mul(RedisModule_StringPtrLen(a, NULL), RedisModule_StringPtrLen(b, NULL));
   return RedisModule_CreateString(this->_ctx, rst.data(), rst.length());
 }
 
 RedisModuleString *
-RedisDecimalUtils::div(const RedisModuleString *a, const RedisModuleString *b, int precision) {
-  string rst = DecimalUtils::div(RedisModule_StringPtrLen(a, NULL), RedisModule_StringPtrLen(b, NULL), precision);
+RedisDecimalUtils::div(const RedisModuleString *a, const RedisModuleString *b) {
+  string rst = DecimalUtils::div(RedisModule_StringPtrLen(a, NULL), RedisModule_StringPtrLen(b, NULL));
   return RedisModule_CreateString(this->_ctx, rst.data(), rst.length());
 }

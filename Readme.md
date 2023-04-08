@@ -33,36 +33,14 @@ $ redis-server --loadmodule ./lib/libdecimal.so
 And run the following command:
 
 ```shell
-127.0.0.1:6379> DECIMAL ADD 10 20
+127.0.0.1:6379> DECIMAL KEY ADD 10
 "30.000000"
-127.0.0.1:6379> DECIMAL SUB 10 20
+127.0.0.1:6379> DECIMAL KEY SUB 10 
 "-10.000000"
-127.0.0.1:6379> DECIMAL MUL 10 20
+127.0.0.1:6379> DECIMAL KEY MUL 10
 "200.000000"
-127.0.0.1:6379> DECIMAL DIV 10 20
+127.0.0.1:6379> DECIMAL KEY DIV 10
 "0.500000"
-```
-
-And specify the precision:
-
-```shell
-127.0.0.1:6379> DECIMAL ADD 10 20 2
-"30.00"
-127.0.0.1:6379> DECIMAL SUB 10 20 2
-"-10.00"
-127.0.0.1:6379> DECIMAL MUL 10 20 2
-"200.00"
-127.0.0.1:6379> DECIMAL DIV 10 20 2
-"0.50"
-```
-
-And **round policy** for division:
-
-```shell
-127.0.0.1:6379> DECIMAL DIV 10 3 2
-"3.33"
-127.0.0.1:6379> DECIMAL DIV 20 3 2
-"6.66"
 ```
 
 # Extensions
